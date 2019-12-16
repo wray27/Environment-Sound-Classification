@@ -1,4 +1,18 @@
 from dataset import UrbanSound8KDataset
+import time
+from multiprocessing import cpu_count
+from typing import Union, NamedTuple
+import torch
+from torchvision.transforms import Compose
+import torch.backends.cudnn
+import numpy as np
+from torch import nn, optim
+from torch.nn import functional as F
+import torchvision.datasets
+from torch.optim.optimizer import Optimizer
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
 
 class CNN(nn.Module):
     def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
@@ -64,24 +78,28 @@ class CNN(nn.Module):
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
 
+
+mode = "MLMC"
 train_loader = torch.utils.data.DataLoader(
-      UrbanSound8KDataset(‘UrbanSound8K_train.pkl’, mode),
+      UrbanSound8KDataset('UrbanSound8K_train.pkl', mode),
       batch_size=32, shuffle=True,
       num_workers=8, pin_memory=True)
 
 val_loader = torch.utils.data.DataLoader(
-     UrbanSound8KDataset(‘UrbanSound8K_test.pkl’, mode),
+     UrbanSound8KDataset('UrbanSound8K_test.pkl', mode),
      batch_size=32, shuffle=False,
      num_workers=8, pin_memory=True)
 
 
+# print(UrbanSound8KDataset('UrbanSound8K_test.pkl', mode).__getitem__(0))
+
 
 for i, (input, target, filename) in enumerate(train_loader):
-
+    pass
 #           training code
 
 
 
 for i, (input, target, filename) in enumerate(val_loader):
-
+    pass
 #           validation code
