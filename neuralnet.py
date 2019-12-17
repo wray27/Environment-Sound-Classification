@@ -189,7 +189,7 @@ class Trainer:
                 self.step += 1
                 data_load_start_time = time.time()
 
-            self.summary_writer.add_scalar("epoch", epoch, self.step)
+            # self.summary_writer.add_scalar("epoch", epoch, self.step)
             if ((epoch + 1) % val_frequency) == 0:
                 self.validate()
                 # self.validate() will put the model in validation mode,
@@ -216,7 +216,7 @@ class Trainer:
 
         # No need to track gradients for validation, we're not optimizing.
         with torch.no_grad():
-            for batch, labels in self.val_loader:
+            for batch, labels, fname in self.val_loader:
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
                 logits = self.model(batch)
