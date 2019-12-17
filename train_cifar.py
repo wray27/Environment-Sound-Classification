@@ -2,7 +2,7 @@
 import time
 from multiprocessing import cpu_count
 from typing import Union, NamedTuple
-
+import sys
 import torch
 from torchvision.transforms import Compose
 import torch.backends.cudnn
@@ -138,6 +138,8 @@ def main(args):
             str(log_dir),
             flush_secs=5
     )
+    # print(train_loader.size())
+    # sys.exit(1)
     trainer = Trainer(
         model, train_loader, test_loader, criterion, optimizer, summary_writer, DEVICE
     )

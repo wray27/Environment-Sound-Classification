@@ -11,14 +11,15 @@ class UrbanSound8KDataset(data.Dataset):
         
 
     def __getitem__(self, index):
-        
+        # Possibly might need to fix this
+        # keys don't print in the right order
         if self.mode == 'LMC':
             # Edit here to load and concatenate the neccessary features to
             # create the LMC feature
             LMC = np.zeros((0,41))
             for feature in self.dataset[index]['features']:
+                # print(feature)
                 if feature in ["logmelspec", "chroma", 'spectral_contrast', "tonnetz"]:
-                    print(feature)
                     LMC = np.vstack((LMC, self.dataset[index]['features'][feature]))
             feature = torch.from_numpy(LMC.astype(np.float32)).unsqueeze(0)
         
@@ -44,9 +45,12 @@ class UrbanSound8KDataset(data.Dataset):
 
             
             feature = torch.from_numpy(MLMC.astype(np.float32)).unsqueeze(0)
-       
+        
+        # feature = torch.flatten(feature,0,1)
         label = self.dataset[index]['classID']
         fname = self.dataset[index]['filename']
+        # print(feature.shape)
+
         return feature, label, fname
 
     def __len__(self):
