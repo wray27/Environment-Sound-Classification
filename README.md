@@ -2,7 +2,7 @@
 
 ## Background
 
-This project was created in order to reproduce the results obtained from the sensors_paper.pdf (cite properly), the paper itself conatains a few inconsistencies but was used to successfully recreate the classifier. 
+This project was created in order to reproduce the results obtained from the sensors_paper.pdf (cite properly), the paper itself conatains a few inconsistencies but was used to successfully recreate the convolutional neural network. 
 
 The network classifies 10 different recorded sounds:
 * air_conditioner
@@ -16,4 +16,4 @@ The network classifies 10 different recorded sounds:
 * siren 
 * street_music
 
-The training and testing datasets used by the convolutional neural netowrk can be found (provide link).
+The training and testing datasets used by the network can be found (provide link).
