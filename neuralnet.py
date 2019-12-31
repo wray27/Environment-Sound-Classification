@@ -129,8 +129,8 @@ class CNN(nn.Module):
 
     @staticmethod
     def initialise_layer(layer):
-        #if hasattr(layer, "bias"):
-        #    nn.init.zeros_(layer.bias)
+        if hasattr(layer, "bias"):
+            nn.init.zeros_(layer.bias)
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
 
