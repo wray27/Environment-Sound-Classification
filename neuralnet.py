@@ -27,19 +27,23 @@ class CNN(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
         # print(self.input_shape.channels)
         self.normaliseConv1 = nn.BatchNorm2d(
-            num_features=32
+            num_features=32,
+            affine = True,
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=32
+            num_features=32,
+            affine = True,
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
-            num_features=64
+            num_features=64,
+            affine = True,
         )
 
         self.normaliseConv4 = nn.BatchNorm2d(
-            num_features=64
+            num_features=64,
+            affine = True,
         )
 
 
@@ -125,8 +129,8 @@ class CNN(nn.Module):
 
     @staticmethod
     def initialise_layer(layer):
-        if hasattr(layer, "bias"):
-            nn.init.zeros_(layer.bias)
+        #if hasattr(layer, "bias"):
+        #    nn.init.zeros_(layer.bias)
         if hasattr(layer, "weight"):
             nn.init.kaiming_normal_(layer.weight)
 
