@@ -48,8 +48,6 @@ class CNN(nn.Module):
             out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
-            #stride=(2,2),
-            #bias = False,
 
 
         )
@@ -62,8 +60,6 @@ class CNN(nn.Module):
             out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
-            #stride=(2,2),
-            #bias = False,
 
 
         )
@@ -74,8 +70,6 @@ class CNN(nn.Module):
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
-            #stride=(2,2),
-            #bias = False,
 
 
         )
@@ -86,16 +80,14 @@ class CNN(nn.Module):
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
-            #stride=(2,2),
-            #bias = False,
 
         )
         self.initialise_layer(self.conv4)
 
-        self.fc1 = nn.Linear(53760, 1024)
+        self.fc1 = nn.Linear(53760, 1024, bias = True)
         self.initialise_layer(self.fc1)
 
-        self.fc2 = nn.Linear(1024, 10)
+        self.fc2 = nn.Linear(1024, 10, bias = True)
         self.initialise_layer(self.fc2)
 
 
@@ -108,26 +100,16 @@ class CNN(nn.Module):
         # print(sounds.size())
         #print(self.normaliseConv1(self.conv1(sounds)).size())
         #print(self.bias1.size())
-        print(sounds.size())
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
-        print(x.size())
-        #print(self.normaliseConv2(self.conv2(self.dropout(x))).size())
+
 
         x = F.relu(self.normaliseConv2(self.conv2(self.dropout(x))))
-        print(x.size())
         x = self.pool1(x)
-        #
 
-        #print(self.normaliseConv3(self.conv3(x)).size())
-        print(x.size())
+
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-        #
-        print(x.size())
         x = F.relu(self.normaliseConv4(self.conv4(self.dropout(x))))
-        #
-        print(x.size())
         x = torch.flatten(x, 1)
-        print(x.size())
 
 
 
