@@ -307,7 +307,7 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=4e-3)
 
     # print(train_dataset.__getitem__(0)[0].size())
 
