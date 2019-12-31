@@ -29,88 +29,115 @@ class CNN(nn.Module):
         self.normaliseConv1 = nn.BatchNorm2d(
             num_features=32
         )
+
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=64
+            num_features=32
         )
+
         self.normaliseConv3 = nn.BatchNorm2d(
             num_features=64
         )
+
         self.normaliseConv4 = nn.BatchNorm2d(
-            num_features=1024
+            num_features=64
         )
+
 
         self.conv1 = nn.Conv2d(
             in_channels=self.input_shape.channels,
             out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
-           
-            
+            #stride=(2,2),
+            #bias = False,
+
+
         )
         self.initialise_layer(self.conv1)
 
         self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
-        
+
         self.conv2 = nn.Conv2d(
             in_channels=32,
-            out_channels=64,
+            out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
-         
-            
+            #stride=(2,2),
+            #bias = False,
+
+
         )
         self.initialise_layer(self.conv2)
 
         self.conv3 = nn.Conv2d(
-            in_channels=64,
+            in_channels=32,
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
-            
-            
+            #stride=(2,2),
+            #bias = False,
+
+
         )
         self.initialise_layer(self.conv3)
 
         self.conv4 = nn.Conv2d(
             in_channels=64,
-            out_channels=1024,
+            out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
-            stride=(42,20),
-            
+            #stride=(2,2),
+            #bias = False,
+
         )
         self.initialise_layer(self.conv4)
-       
-        self.fc1 = nn.Linear(1024, 10)
+
+        self.fc1 = nn.Linear(53760, 1024)
         self.initialise_layer(self.fc1)
-        
-        self.fc2 = nn.Linear(10, 10)
+
+        self.fc2 = nn.Linear(1024, 10)
         self.initialise_layer(self.fc2)
 
 
-       
+
+
+
+
 
     def forward(self, sounds: torch.Tensor) -> torch.Tensor:
         # print(sounds.size())
+        #print(self.normaliseConv1(self.conv1(sounds)).size())
+        #print(self.bias1.size())
+        print(sounds.size())
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
-        # print(x.size())
+        print(x.size())
+        #print(self.normaliseConv2(self.conv2(self.dropout(x))).size())
+
         x = F.relu(self.normaliseConv2(self.conv2(self.dropout(x))))
-        # print(x.size())
+        print(x.size())
         x = self.pool1(x)
-        # print(x.size())
-       
+        #
 
+        #print(self.normaliseConv3(self.conv3(x)).size())
+        print(x.size())
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-        # print(x.size())
-
+        #
+        print(x.size())
         x = F.relu(self.normaliseConv4(self.conv4(self.dropout(x))))
-        # print(x.size())
+        #
+        print(x.size())
         x = torch.flatten(x, 1)
-        # print(x.size())
+        print(x.size())
+
+
 
         x = torch.sigmoid((self.fc1(self.dropout(x))))
 
-        x = self.fc2(x) 
+
+
+        x = self.fc2(x)
+
+
 
         return x
 
@@ -138,7 +165,7 @@ class Trainer:
         self.val_loader = val_loader
         self.criterion = criterion
         self.optimizer = optimizer
-      
+
         self.step = 0
     # TODO
     def train(
@@ -155,7 +182,7 @@ class Trainer:
             for batch, labels, fname in self.train_loader:
                 batch = batch.to(self.device)
                 labels = labels.to(self.device)
-                
+
                 data_load_end_time = time.time()
 
 
@@ -182,7 +209,7 @@ class Trainer:
 
                 data_load_time = data_load_end_time - data_load_start_time
                 step_time = time.time() - data_load_end_time
-                
+
                 if ((self.step + 1) % print_frequency) == 0:
                     self.print_metrics(epoch, accuracy, loss, data_load_time, step_time)
 
@@ -195,7 +222,7 @@ class Trainer:
                 # self.validate() will put the model in validation mode,
                 # so we have to switch back to train mode afterwards
                 self.model.train()
-    
+
     def print_metrics(self, epoch, accuracy, loss, data_load_time, step_time):
         epoch_step = self.step % len(self.train_loader)
         print(
@@ -255,7 +282,7 @@ def compute_accuracy(
 def compute_class_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]) -> float:
     classLabel = [0] * 10
     classPred = [0] * 10
-    
+
     nameArray = ["air_conditioner", "car_horn", "children_playing", "dog_bark", "drilling", "engine_idling", "gun_shot", "jackhammer", "siren", "street_music"]
 
     for i in range(len(labels)):
@@ -292,8 +319,8 @@ def main():
 
     # for i in range(train_loader.__len__()):
     #     print(train_loader.dataset.__getitem__(i)[0].size())
-    
-    
+
+
     model = CNN(height=85, width=41, channels=1, class_count=10, dropout=0.5)
 
     criterion = nn.CrossEntropyLoss()
@@ -301,7 +328,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     # print(train_dataset.__getitem__(0)[0].size())
-    
+
     trainer = Trainer(
         model, train_loader, val_loader, criterion, optimizer, DEVICE
     )
