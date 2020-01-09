@@ -13,6 +13,7 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
+import copy
 
 class ImageShape(NamedTuple):
     height: int
@@ -191,6 +192,7 @@ class Trainer:
 
                 with torch.no_grad():
                     preds = logits.argmax(-1)
+                    #preds = file_level_pred(preds)
                     accuracy = compute_accuracy(labels, preds)
 
                 data_load_time = data_load_end_time - data_load_start_time
@@ -223,7 +225,9 @@ class Trainer:
 
 
     def validate(self):
-        results = {"preds": [], "labels": []}
+        print("\n\nvalidating\n\n")
+        results = {"preds": [], "labels": [], "fname": []}
+        newResults = {"preds": [], "labels": [], "fname": []}
         total_loss = 0
         self.model.eval()
 
@@ -235,10 +239,17 @@ class Trainer:
                 logits = self.model(batch)
                 loss = self.criterion(logits, labels)
                 total_loss += loss.item()
-                preds = logits.argmax(dim=-1).cpu().numpy()
-                results["preds"].extend(list(preds))
+                preds = logits.cpu().numpy()
+                oldpreds = logits.argmax(dim=-1).cpu().numpy()
+                results["preds"].extend(list(oldpreds))
                 results["labels"].extend(list(labels.cpu().numpy()))
+                results["fname"].extend(list(fname))
+                newResults["preds"].extend(list(preds))
+                newResults["labels"].extend(list(labels.cpu().numpy()))
+                newResults["fname"].extend(list(fname))
 
+
+        newResults = file_level_pred(newResults)
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
@@ -249,6 +260,40 @@ class Trainer:
 
 
         print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
+
+        print("new accuracy:", compute_accuracy(np.array(newResults["labels"]), np.array(newResults["preds"])))
+
+
+def file_level_pred(results):
+    #print(results["preds"])
+    #print(results["fname"])
+    file_results =  dict()
+    initialPreds = []
+    for idx, prediction in enumerate(results["preds"]):
+        initialPreds.append(np.argmax(prediction))
+        file_name = results["fname"][idx]
+        if(not file_name in file_results):
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = prediction
+        else:
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = list(map(sum, zip(file_results[file_name], prediction)))
+
+    for file_r in file_results:
+        file_results[file_r] = np.argmax(file_results[file_r])
+
+    gotWrong = 0
+    for idx, result in enumerate(results["preds"]):
+        results["preds"][idx] = file_results[results["fname"][idx]]
+        if(results["preds"][idx] != initialPreds[idx]):
+            gotWrong += 1
+        print(idx)
+    print("got wrong:", gotWrong)
+
+    return results
+
 
 
 def compute_accuracy(
