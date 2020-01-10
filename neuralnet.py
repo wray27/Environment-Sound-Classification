@@ -258,6 +258,7 @@ class Trainer:
 
 
         results = file_level_pred(results)
+
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
@@ -268,6 +269,40 @@ class Trainer:
 
 
         print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
+
+        print("new accuracy:", compute_accuracy(np.array(newResults["labels"]), np.array(newResults["preds"])))
+
+
+def file_level_pred(results):
+    #print(results["preds"])
+    #print(results["fname"])
+    file_results =  dict()
+    initialPreds = []
+    for idx, prediction in enumerate(results["preds"]):
+        initialPreds.append(np.argmax(prediction))
+        file_name = results["fname"][idx]
+        if(not file_name in file_results):
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = prediction
+        else:
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = list(map(sum, zip(file_results[file_name], prediction)))
+
+    for file_r in file_results:
+        file_results[file_r] = np.argmax(file_results[file_r])
+
+    gotWrong = 0
+    for idx, result in enumerate(results["preds"]):
+        results["preds"][idx] = file_results[results["fname"][idx]]
+        if(results["preds"][idx] != initialPreds[idx]):
+            gotWrong += 1
+        print(idx)
+    print("got wrong:", gotWrong)
+
+    return results
+
 
 
 
