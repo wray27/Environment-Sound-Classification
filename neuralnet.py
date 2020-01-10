@@ -95,6 +95,15 @@ class CNN(nn.Module):
         self.fc2 = nn.Linear(1024, 10, bias = True)
         self.initialise_layer(self.fc2)
 
+        self.smax = nn.Softmax()
+
+        #first normal
+        #second pool sep
+        #third smax 0
+        #1
+        #-1
+        #nothing
+
 
 
 
@@ -107,22 +116,25 @@ class CNN(nn.Module):
         #print(self.bias1.size())
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
 
-
-        x = F.relu(self.normaliseConv2(self.conv2(self.dropout(x))))
+        x = self.dropout(x)
+        x = F.relu(self.normaliseConv2(self.conv2(x)))
         x = self.pool1(x)
 
 
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-        x = F.relu(self.normaliseConv4(self.conv4(self.dropout(x))))
+        x = self.dropout(x)
+        x = F.relu(self.normaliseConv4(self.conv4(x)))
         x = torch.flatten(x, 1)
 
 
-
-        x = torch.sigmoid((self.fc1(self.dropout(x))))
+        x = self.dropout(x)
+        x = torch.sigmoid((self.fc1(x)))
 
 
 
         x = self.fc2(x)
+
+        x = self.smax(x)
 
 
 
@@ -227,7 +239,6 @@ class Trainer:
     def validate(self):
         print("\n\nvalidating\n\n")
         results = {"preds": [], "labels": [], "fname": []}
-        newResults = {"preds": [], "labels": [], "fname": []}
         total_loss = 0
         self.model.eval()
 
@@ -240,16 +251,14 @@ class Trainer:
                 loss = self.criterion(logits, labels)
                 total_loss += loss.item()
                 preds = logits.cpu().numpy()
-                oldpreds = logits.argmax(dim=-1).cpu().numpy()
-                results["preds"].extend(list(oldpreds))
+                #preds = logits.argmax(dim=-1).cpu().numpy()
+                results["preds"].extend(list(preds))
                 results["labels"].extend(list(labels.cpu().numpy()))
                 results["fname"].extend(list(fname))
-                newResults["preds"].extend(list(preds))
-                newResults["labels"].extend(list(labels.cpu().numpy()))
-                newResults["fname"].extend(list(fname))
 
 
-        newResults = file_level_pred(newResults)
+        results = file_level_pred(results)
+
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
@@ -295,6 +304,29 @@ def file_level_pred(results):
     return results
 
 
+
+
+def file_level_pred(results):
+    file_results =  dict()
+    for idx, prediction in enumerate(results["preds"]):
+        file_name = results["fname"][idx]
+        if(not file_name in file_results):
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = prediction
+        else:
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = list(map(sum, zip(file_results[file_name], prediction)))
+
+    for file_r in file_results:
+        file_results[file_r] = np.argmax(file_results[file_r])
+
+    for idx, result in enumerate(results["preds"]):
+        results["preds"][idx] = file_results[results["fname"][idx]]
+
+
+    return results
 
 def compute_accuracy(
     labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]
