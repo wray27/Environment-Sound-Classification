@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import copy
+import sys
 
 class ImageShape(NamedTuple):
     height: int
@@ -21,30 +22,25 @@ class ImageShape(NamedTuple):
     channels: int
 
 class CNN(nn.Module):
-    def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float):
+    def __init__(self, height: int, width: int, channels: int, class_count: int, dropout: float, isMLMC):
         super().__init__()
         self.input_shape = ImageShape(height=height, width=width, channels=channels)
         self.class_count = class_count
         self.dropout = nn.Dropout(p=dropout)
-        # print(self.input_shape.channels)
         self.normaliseConv1 = nn.BatchNorm2d(
             num_features=32,
-            affine = True,
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
             num_features=32,
-            affine = True,
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
             num_features=64,
-            affine = True,
         )
 
         self.normaliseConv4 = nn.BatchNorm2d(
             num_features=64,
-            affine = True,
         )
 
 
@@ -88,8 +84,12 @@ class CNN(nn.Module):
 
         )
         self.initialise_layer(self.conv4)
+        fcsize = 53760
 
-        self.fc1 = nn.Linear(53760, 1024, bias = True)
+        if(isMLMC):
+            fcsize = 92160
+
+        self.fc1 = nn.Linear(fcsize, 1024, bias = True)
         self.initialise_layer(self.fc1)
 
         self.fc2 = nn.Linear(1024, 10, bias = True)
@@ -97,12 +97,6 @@ class CNN(nn.Module):
 
         self.smax = nn.Softmax()
 
-        #first normal
-        #second pool sep
-        #third smax 0
-        #1
-        #-1
-        #nothing
 
 
 
@@ -111,9 +105,6 @@ class CNN(nn.Module):
 
 
     def forward(self, sounds: torch.Tensor) -> torch.Tensor:
-        # print(sounds.size())
-        #print(self.normaliseConv1(self.conv1(sounds)).size())
-        #print(self.bias1.size())
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
 
         x = self.dropout(x)
@@ -164,6 +155,7 @@ class Trainer:
         self.val_loader = val_loader
         self.criterion = criterion
         self.optimizer = optimizer
+        self.intermediate_results = None
 
         self.step = 0
     # TODO
@@ -184,19 +176,11 @@ class Trainer:
 
                 data_load_end_time = time.time()
 
-
-                ## TASK 1: Compute the forward pass of the model, print the output shape
-                ##         and quit the program
                 logits = self.model.forward(batch)
 
                 loss = self.criterion(logits, labels)
 
-                ## TASK 10: Compute the backward pass
-
                 loss.backward()
-
-
-                ## TASK 12: Step the optimizer and then zero out the gradient buffers.
 
                 self.optimizer.step()
 
@@ -218,10 +202,12 @@ class Trainer:
 
             # self.summary_writer.add_scalar("epoch", epoch, self.step)
             if ((epoch + 1) % val_frequency) == 0:
-                self.validate()
+                int_results = self.validate()
                 # self.validate() will put the model in validation mode,
                 # so we have to switch back to train mode afterwards
                 self.model.train()
+
+        return int_results
 
     def print_metrics(self, epoch, accuracy, loss, data_load_time, step_time):
         epoch_step = self.step % len(self.train_loader)
@@ -236,11 +222,13 @@ class Trainer:
         )
 
 
+
     def validate(self):
         print("\n\nvalidating\n\n")
         results = {"preds": [], "labels": [], "fname": []}
         total_loss = 0
         self.model.eval()
+
 
         # No need to track gradients for validation, we're not optimizing.
         with torch.no_grad():
@@ -255,55 +243,28 @@ class Trainer:
                 results["preds"].extend(list(preds))
                 results["labels"].extend(list(labels.cpu().numpy()))
                 results["fname"].extend(list(fname))
+            intermediate_results = copy.deepcopy(results)
+
+            results = file_level_pred(results)
+
+            print_accuracy(results, total_loss, self.val_loader)
+
+        return intermediate_results
 
 
-        results = file_level_pred(results)
-
-        accuracy = compute_accuracy(
-            np.array(results["labels"]), np.array(results["preds"])
-        )
-        compute_class_accuracy(
-            np.array(results["labels"]), np.array(results["preds"])
-        )
-        average_loss = total_loss / len(self.val_loader)
-
-
-        print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
-
-        print("new accuracy:", compute_accuracy(np.array(newResults["labels"]), np.array(newResults["preds"])))
+def print_accuracy(results, total_loss, val_loader):
+    accuracy = compute_accuracy(
+        np.array(results["labels"]), np.array(results["preds"])
+    )
+    compute_class_accuracy(
+        np.array(results["labels"]), np.array(results["preds"])
+    )
+    if(total_loss):
+        average_loss = total_loss / len(val_loader)
+        print(f"validation loss: {average_loss:.5f}")
 
 
-def file_level_pred(results):
-    #print(results["preds"])
-    #print(results["fname"])
-    file_results =  dict()
-    initialPreds = []
-    for idx, prediction in enumerate(results["preds"]):
-        initialPreds.append(np.argmax(prediction))
-        file_name = results["fname"][idx]
-        if(not file_name in file_results):
-            #zarray = np.zeros(10)
-            #zarray[np.argmax(prediction)] = 1
-            file_results[file_name] = prediction
-        else:
-            #zarray = np.zeros(10)
-            #zarray[np.argmax(prediction)] = 1
-            file_results[file_name] = list(map(sum, zip(file_results[file_name], prediction)))
-
-    for file_r in file_results:
-        file_results[file_r] = np.argmax(file_results[file_r])
-
-    gotWrong = 0
-    for idx, result in enumerate(results["preds"]):
-        results["preds"][idx] = file_results[results["fname"][idx]]
-        if(results["preds"][idx] != initialPreds[idx]):
-            gotWrong += 1
-        print(idx)
-    print("got wrong:", gotWrong)
-
-    return results
-
-
+    print(f"accuracy: {accuracy * 100:2.2f}")
 
 
 def file_level_pred(results):
@@ -331,12 +292,6 @@ def file_level_pred(results):
 def compute_accuracy(
     labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]
 ) -> float:
-    """
-    Args:
-        labels: ``(batch_size, class_count)`` tensor or array containing example labels
-        preds: ``(batch_size, class_count)`` tensor or array containing model prediction
-    """
-
 
     assert len(labels) == len(preds)
     return float((labels == preds).sum()) / len(labels)
@@ -351,7 +306,7 @@ def compute_class_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union
     for i in range(len(labels)):
         if(labels[i] == preds[i]):
             classLabel[labels[i]] += 1
-        classPred[preds[i]] += 1
+        classPred[labels[i]] += 1
 
     for i in range(10):
         acc = 0
@@ -360,7 +315,7 @@ def compute_class_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union
         print(f"Class accuracy for {nameArray[i]}: {acc * 100:2.2f}")
 
 
-def main():
+def run(mode):
 
     if torch.cuda.is_available():
         DEVICE = torch.device("cuda")
@@ -368,7 +323,7 @@ def main():
         DEVICE = torch.device("cpu")
 
 
-    mode = "LMC"
+    mode = mode
     train_loader = torch.utils.data.DataLoader(
         UrbanSound8KDataset('UrbanSound8K_train.pkl', mode),
         batch_size=32, shuffle=True,
@@ -379,38 +334,44 @@ def main():
         batch_size=32, shuffle=False,
         num_workers=8, pin_memory=True)
 
+    isMLMC = False
+    if(mode == 'MLMC'):
+        isMLMC = True
 
-    # for i in range(train_loader.__len__()):
-    #     print(train_loader.dataset.__getitem__(i)[0].size())
 
-
-    model = CNN(height=85, width=41, channels=1, class_count=10, dropout=0.5)
+    model = CNN(height=85, width=41, channels=1, class_count=10, dropout=0.5, isMLMC=isMLMC)
 
     criterion = nn.CrossEntropyLoss()
 
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=4e-3)
 
-    # print(train_dataset.__getitem__(0)[0].size())
 
     trainer = Trainer(
         model, train_loader, val_loader, criterion, optimizer, DEVICE
     )
 
-    trainer.train(
-        epochs=50,
+    int_results = trainer.train(
+        epochs=1,
         print_frequency=10,
-        val_frequency=2,
+        val_frequency=1,
     )
 
-    for i, (input, target, filename) in enumerate(train_loader):
-        pass
-    #           training code
+    return int_results
 
 
-
-    for i, (input, target, filename) in enumerate(val_loader):
-        pass
-    #           validation code
-
-
-main()
+if __name__ == "__main__":
+    if(len(sys.argv) < 2):
+        print("No mode given in arguments")
+    else:
+        mode = sys.argv[1]
+        if(mode == 'TSCNN'):
+            int_results1 = run('LMC')
+            int_results2 = run('MC')
+            combinedPreds = list(map(sum, zip(int_results1["preds"], int_results2["preds"])))
+            int_results1["preds"] = combinedPreds
+            results = file_level_pred(int_results1)
+            print_accuracy(results, None, None)
+        elif(mode == 'LMC' or mode == 'MC' or mode == 'MLMC'):
+            run(mode)
+        else:
+            print("Wrong arguments given")
