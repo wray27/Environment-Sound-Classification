@@ -13,6 +13,7 @@ from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
+import copy
 
 class ImageShape(NamedTuple):
     height: int
@@ -94,6 +95,15 @@ class CNN(nn.Module):
         self.fc2 = nn.Linear(1024, 10, bias = True)
         self.initialise_layer(self.fc2)
 
+        self.smax = nn.Softmax()
+
+        #first normal
+        #second pool sep
+        #third smax 0
+        #1
+        #-1
+        #nothing
+
 
 
 
@@ -106,22 +116,25 @@ class CNN(nn.Module):
         #print(self.bias1.size())
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
 
-
-        x = F.relu(self.normaliseConv2(self.conv2(self.dropout(x))))
+        x = self.dropout(x)
+        x = F.relu(self.normaliseConv2(self.conv2(x)))
         x = self.pool1(x)
 
 
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-        x = F.relu(self.normaliseConv4(self.conv4(self.dropout(x))))
+        x = self.dropout(x)
+        x = F.relu(self.normaliseConv4(self.conv4(x)))
         x = torch.flatten(x, 1)
 
 
-
-        x = torch.sigmoid((self.fc1(self.dropout(x))))
+        x = self.dropout(x)
+        x = torch.sigmoid((self.fc1(x)))
 
 
 
         x = self.fc2(x)
+
+        x = self.smax(x)
 
 
 
@@ -191,6 +204,7 @@ class Trainer:
 
                 with torch.no_grad():
                     preds = logits.argmax(-1)
+                    #preds = file_level_pred(preds)
                     accuracy = compute_accuracy(labels, preds)
 
                 data_load_time = data_load_end_time - data_load_start_time
@@ -223,7 +237,8 @@ class Trainer:
 
 
     def validate(self):
-        results = {"preds": [], "labels": []}
+        print("\n\nvalidating\n\n")
+        results = {"preds": [], "labels": [], "fname": []}
         total_loss = 0
         self.model.eval()
 
@@ -235,10 +250,14 @@ class Trainer:
                 logits = self.model(batch)
                 loss = self.criterion(logits, labels)
                 total_loss += loss.item()
-                preds = logits.argmax(dim=-1).cpu().numpy()
+                preds = logits.cpu().numpy()
+                #preds = logits.argmax(dim=-1).cpu().numpy()
                 results["preds"].extend(list(preds))
                 results["labels"].extend(list(labels.cpu().numpy()))
+                results["fname"].extend(list(fname))
 
+
+        results = file_level_pred(results)
         accuracy = compute_accuracy(
             np.array(results["labels"]), np.array(results["preds"])
         )
@@ -250,6 +269,29 @@ class Trainer:
 
         print(f"validation loss: {average_loss:.5f}, accuracy: {accuracy * 100:2.2f}")
 
+
+
+def file_level_pred(results):
+    file_results =  dict()
+    for idx, prediction in enumerate(results["preds"]):
+        file_name = results["fname"][idx]
+        if(not file_name in file_results):
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = prediction
+        else:
+            #zarray = np.zeros(10)
+            #zarray[np.argmax(prediction)] = 1
+            file_results[file_name] = list(map(sum, zip(file_results[file_name], prediction)))
+
+    for file_r in file_results:
+        file_results[file_r] = np.argmax(file_results[file_r])
+
+    for idx, result in enumerate(results["preds"]):
+        results["preds"][idx] = file_results[results["fname"][idx]]
+
+
+    return results
 
 def compute_accuracy(
     labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]
