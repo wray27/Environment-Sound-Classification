@@ -32,7 +32,7 @@ class CNN(nn.Module):
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=32,
+            num_features=64,
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
@@ -58,7 +58,7 @@ class CNN(nn.Module):
 
         self.conv2 = nn.Conv2d(
             in_channels=32,
-            out_channels=32,
+            out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
 
@@ -67,7 +67,7 @@ class CNN(nn.Module):
         self.initialise_layer(self.conv2)
 
         self.conv3 = nn.Conv2d(
-            in_channels=32,
+            in_channels=64,
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
@@ -81,21 +81,22 @@ class CNN(nn.Module):
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
+            stride=(2,2),
 
         )
         self.initialise_layer(self.conv4)
-        fcsize = 53760
+        fcsize = 13440
 
         if(isMLMC):
-            fcsize = 92160
+            fcsize = 23040
 
-        self.fc1 = nn.Linear(fcsize, 1024, bias = True)
+        self.fc1 = nn.Linear(fcsize, 1024)
         self.initialise_layer(self.fc1)
 
-        self.fc2 = nn.Linear(1024, 10, bias = True)
+        self.fc2 = nn.Linear(1024, 10)
         self.initialise_layer(self.fc2)
 
-        self.smax = nn.Softmax()
+        self.smax = nn.Softmax(dim = 1)
 
 
 
@@ -126,6 +127,8 @@ class CNN(nn.Module):
         x = self.fc2(x)
 
         x = self.smax(x)
+        #stride
+        #summary
 
 
 
@@ -351,9 +354,9 @@ def run(mode):
     )
 
     int_results = trainer.train(
-        epochs=1,
-        print_frequency=10,
-        val_frequency=1,
+        epochs=50,
+        print_frequency=50,
+        val_frequency=50,
     )
 
     return int_results
