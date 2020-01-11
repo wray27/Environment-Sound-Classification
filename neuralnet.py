@@ -32,7 +32,7 @@ class CNN(nn.Module):
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=32,
+            num_features=64,
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
@@ -58,7 +58,7 @@ class CNN(nn.Module):
 
         self.conv2 = nn.Conv2d(
             in_channels=32,
-            out_channels=32,
+            out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
 
@@ -67,7 +67,7 @@ class CNN(nn.Module):
         self.initialise_layer(self.conv2)
 
         self.conv3 = nn.Conv2d(
-            in_channels=32,
+            in_channels=64,
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
@@ -108,28 +108,25 @@ class CNN(nn.Module):
     def forward(self, sounds: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
 
-
-        x = F.relu(self.normaliseConv2(self.conv2(x)))
         x = self.dropout(x)
+        x = F.relu(self.normaliseConv2(self.conv2(x)))
         x = self.pool1(x)
 
 
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-
-        x = F.relu(self.normaliseConv4(self.conv4(x)))
         x = self.dropout(x)
+        x = F.relu(self.normaliseConv4(self.conv4(x)))
         x = torch.flatten(x, 1)
 
 
-
+        x = self.dropout(x)
         x = torch.sigmoid((self.fc1(x)))
-        #x = self.dropout(x)
 
 
 
         x = self.fc2(x)
 
-        #x = self.smax(x)
+        x = self.smax(x)
         #stride
         #summary
 
@@ -306,7 +303,6 @@ def compute_accuracy(
 def compute_class_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union[torch.Tensor, np.ndarray]) -> float:
     classLabel = [0] * 10
     classPred = [0] * 10
-    acc = [0] * 10
 
     nameArray = ["air_conditioner", "car_horn", "children_playing", "dog_bark", "drilling", "engine_idling", "gun_shot", "jackhammer", "siren", "street_music"]
 
@@ -316,16 +312,10 @@ def compute_class_accuracy(labels: Union[torch.Tensor, np.ndarray], preds: Union
         classPred[labels[i]] += 1
 
     for i in range(10):
+        acc = 0
         if(classPred[i]):
-            acc[i] = classLabel[i]/classPred[i]
-        print(f"Class accuracy for {nameArray[i]}: {acc[i] * 100:2.2f}")
-
-    totalAcc = 0
-    for accur in acc:
-        totalAcc += accur
-    print(f"Overall Accuracy: {totalAcc * 10:2.2f}")
-
-
+            acc = classLabel[i]/classPred[i]
+        print(f"Class accuracy for {nameArray[i]}: {acc * 100:2.2f}")
 
 
 def run(mode):
