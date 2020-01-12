@@ -32,7 +32,7 @@ class CNN(nn.Module):
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=64,
+            num_features=32,
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
@@ -58,7 +58,7 @@ class CNN(nn.Module):
 
         self.conv2 = nn.Conv2d(
             in_channels=32,
-            out_channels=64,
+            out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
 
@@ -67,7 +67,7 @@ class CNN(nn.Module):
         self.initialise_layer(self.conv2)
 
         self.conv3 = nn.Conv2d(
-            in_channels=64,
+            in_channels=32,
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
@@ -108,25 +108,28 @@ class CNN(nn.Module):
     def forward(self, sounds: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
 
-        x = self.dropout(x)
+
         x = F.relu(self.normaliseConv2(self.conv2(x)))
+        x = self.dropout(x)
         x = self.pool1(x)
 
 
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-        x = self.dropout(x)
+
         x = F.relu(self.normaliseConv4(self.conv4(x)))
+        x = self.dropout(x)
         x = torch.flatten(x, 1)
 
 
-        x = self.dropout(x)
+
         x = torch.sigmoid((self.fc1(x)))
+        x = self.dropout(x)
 
 
 
         x = self.fc2(x)
 
-        x = self.smax(x)
+        #x = self.smax(x)
         #stride
         #summary
 
