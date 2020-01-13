@@ -96,8 +96,8 @@ class CNN(nn.Module):
         self.initialise_layer(self.conv4)
         fcsize = 15488
 
-        # if(isMLMC):
-        #     fcsize = 23040
+        if(isMLMC):
+             fcsize = 23040
 
         self.fc1 = nn.Linear(fcsize, 1024)
         self.initialise_layer(self.fc1)
@@ -151,10 +151,10 @@ class CNN(nn.Module):
         # if hasattr(layer, "bias"):
         #     nn.init.zeros_(layer.bias)
         if hasattr(layer, "weight"):
-            if(type(layer) == nn.Linear):
-                torch.nn.init.xavier_uniform_(layer.weight)
-            else:
-                nn.init.kaiming_normal_(layer.weight)
+        #    if(type(layer) == nn.Linear):
+        #        torch.nn.init.xavier_normal_(layer.weight, gain=1.),
+        #    else:
+            nn.init.kaiming_normal_(layer.weight)
 
 
 class Trainer:
@@ -365,7 +365,7 @@ def run(mode):
 
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-7, eps=1e-5)
 
 
     trainer = Trainer(
