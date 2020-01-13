@@ -365,7 +365,7 @@ def run(mode):
 
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-7, eps=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
 
 
     trainer = Trainer(

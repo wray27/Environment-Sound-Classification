@@ -13,7 +13,7 @@ def show_graph( name, data):
     cbar = plt.colorbar()
     cbar.set_label("Volume (dB)")
     plt.title(f"{name} Feature Set")
-    
+
     plt.savefig(name + ".png", bbox_inches='tight')
     plt.show()
 
@@ -21,7 +21,7 @@ class UrbanSound8KDataset(data.Dataset):
     def __init__(self, dataset_path, mode):
         self.dataset = pickle.load(open(dataset_path, 'rb'))
         self.mode = mode
-        
+
 
     def __getitem__(self, index):
         # Possibly might need to fix this
@@ -30,35 +30,37 @@ class UrbanSound8KDataset(data.Dataset):
             # Edit here to load and concatenate the neccessary features to
             # create the LMC feature
             LMC = np.zeros((0,41))
-            for feature in self.dataset[index]['features']:
+            # for feature in self.dataset[index]['features']:
                 # print(feature)
-                LMC = np.vstack((LMC, self.dataset[index]['features']["logmelspec"]))
-                LMC = np.vstack((LMC, self.dataset[index]['features']["chroma"]))
-                LMC = np.vstack((LMC, self.dataset[index]['features']["spectral_contrast"))
-                LMC = np.vstack((LMC, self.dataset[index]['features']["tonnetz"]))
+            LMC = np.vstack((LMC, self.dataset[index]['features']["logmelspec"]))
+            LMC = np.vstack((LMC, self.dataset[index]['features']["chroma"]))
+            LMC = np.vstack((LMC, self.dataset[index]['features']["spectral_contrast"]))
+            LMC = np.vstack((LMC, self.dataset[index]['features']["tonnetz"]))
 
             feature = torch.from_numpy(LMC.astype(np.float32)).unsqueeze(0)
 
             if index == 12:
                 show_graph("LMC", LMC)
 
-        
+
         elif self.mode == 'MC':
-            # Edit here to load and concatenate the neccessary features to 
+            # Edit here to load and concatenate the neccessary features to
             # create the MC feature
             MC = np.zeros((0,41))
-            for feature in self.dataset[index]['features']:
-                # print(feature)
-                if feature in  ["mfcc", "chroma", 'spectral_contrast',  "tonnetz"]:
-                    MC = np.vstack((MC, self.dataset[index]['features'][feature]))
-                
+        # for feature in self.dataset[index]['features']:
+        #     # print(feature)
+        #     if feature in  ["mfcc", "chroma", 'spectral_contrast',  "tonnetz"]:
+            MC = np.vstack((MC, self.dataset[index]['features']["mfcc"]))
+            MC = np.vstack((MC, self.dataset[index]['features']["chroma"]))
+            MC = np.vstack((MC, self.dataset[index]['features']['spectral_contrast']))
+            MC = np.vstack((MC, self.dataset[index]['features']["tonnetz"]))
             if index == 12:
                 show_graph("MC",MC)
 
-         
+
             feature = torch.from_numpy(MC.astype(np.float32)).unsqueeze(0)
         elif self.mode == 'MLMC':
-            # Edit here to load and concatenate the neccessary features to 
+            # Edit here to load and concatenate the neccessary features to
             # create the MLMC feature
             MLMC = np.zeros((0,41))
             for feature in self.dataset[index]['features']:
@@ -69,11 +71,11 @@ class UrbanSound8KDataset(data.Dataset):
                 MLMC = np.vstack((MLMC, self.dataset[index]['features']["chroma"]))
                 MLMC = np.vstack((MLMC, self.dataset[index]['features']['spectral_contrast']))
                 MLMC = np.vstack((MLMC, self.dataset[index]['features']["tonnetz"]))
-                
 
-            
+
+
             feature = torch.from_numpy(MLMC.astype(np.float32)).unsqueeze(0)
-        
+
         # feature = torch.flatten(feature,0,1)
         label = self.dataset[index]['classID']
         fname = self.dataset[index]['filename']
@@ -86,11 +88,10 @@ class UrbanSound8KDataset(data.Dataset):
         return len(self.dataset)
 
 def main():
-    
+
     x = UrbanSound8KDataset('UrbanSound8K_test.pkl', "LMC").__getitem__(12)
     y = UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC").__getitem__(12)
-    
+
 
 if __name__ == '__main__':
     main()
-    
