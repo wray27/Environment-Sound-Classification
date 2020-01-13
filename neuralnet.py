@@ -32,7 +32,8 @@ class CNN(nn.Module):
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=64,
+            num_features=32        # if hasattr(layer, "bias"):
+        #     nn.init.zeros_(layer.bias)
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
@@ -49,28 +50,35 @@ class CNN(nn.Module):
             out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
+            bias=False,
+            stride=(1,1)
 
 
         )
         self.initialise_layer(self.conv1)
 
-        self.pool1 = nn.MaxPool2d(kernel_size=(2, 2))
+        self.pool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2,2), ceil_mode = True)
 
         self.conv2 = nn.Conv2d(
             in_channels=32,
-            out_channels=64,
+            out_channels=32,
             padding=(1,1),
             kernel_size=(3, 3),
+            bias=False,
+            stride=(1,1)
+
 
 
         )
         self.initialise_layer(self.conv2)
 
         self.conv3 = nn.Conv2d(
-            in_channels=64,
+            in_channels=32,
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
+            bias = False,
+            stride=(1,1)
 
 
         )
@@ -81,14 +89,15 @@ class CNN(nn.Module):
             out_channels=64,
             padding=(1,1),
             kernel_size=(3, 3),
+            bias= False,
             stride=(2,2),
 
         )
         self.initialise_layer(self.conv4)
-        fcsize = 13440
+        fcsize = 15488
 
-        if(isMLMC):
-            fcsize = 23040
+        # if(isMLMC):
+        #     fcsize = 23040
 
         self.fc1 = nn.Linear(fcsize, 1024)
         self.initialise_layer(self.fc1)
@@ -96,7 +105,7 @@ class CNN(nn.Module):
         self.fc2 = nn.Linear(1024, 10)
         self.initialise_layer(self.fc2)
 
-        self.smax = nn.Softmax(dim = 1)
+        #  self.smax = nn.Softmax(dim = 1)
 
 
 
@@ -108,21 +117,21 @@ class CNN(nn.Module):
     def forward(self, sounds: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.normaliseConv1(self.conv1(sounds)))
 
-        x = self.dropout(x)
         x = F.relu(self.normaliseConv2(self.conv2(x)))
+        x = self.dropout(x)
 
         x = self.pool1(x)
 
 
         x = F.relu(self.normaliseConv3(self.conv3(x)))
-        x = self.dropout(x)
         x = F.relu(self.normaliseConv4(self.conv4(x)))
+        x = self.dropout(x)
 
         x = torch.flatten(x, 1)
 
 
-        x = self.dropout(x)
         x = torch.sigmoid((self.fc1(x)))
+        x = self.dropout(x)
 
 
 
@@ -139,10 +148,13 @@ class CNN(nn.Module):
 
     @staticmethod
     def initialise_layer(layer):
-        if hasattr(layer, "bias"):
-            nn.init.zeros_(layer.bias)
+        # if hasattr(layer, "bias"):
+        #     nn.init.zeros_(layer.bias)
         if hasattr(layer, "weight"):
-            nn.init.kaiming_normal_(layer.weight)
+            if(type(layer) == nn.Linear):
+                torch.nn.init.xavier_uniform_(layer.weight)
+            else:
+                nn.init.kaiming_normal_(layer.weight)
 
 
 class Trainer:
@@ -353,7 +365,7 @@ def run(mode):
 
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=4e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
 
 
     trainer = Trainer(
@@ -363,7 +375,7 @@ def run(mode):
     int_results = trainer.train(
         epochs=50,
         print_frequency=50,
-        val_frequency=50,
+        val_frequency=5,
     )
 
     return int_results
