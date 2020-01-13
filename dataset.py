@@ -14,8 +14,8 @@ def show_graph( name, data):
     cbar.set_label("Volume (dB)")
     plt.title(f"{name} Feature Set")
     
+    plt.savefig(name + ".png", bbox_inches='tight')
     plt.show()
-    plt.savefig(name + ".png")
 
 class UrbanSound8KDataset(data.Dataset):
     def __init__(self, dataset_path, mode):
