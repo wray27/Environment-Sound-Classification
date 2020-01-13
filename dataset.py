@@ -1,8 +1,21 @@
 import torch
 from torch.utils import data
 import numpy as np
+import matplotlib.pyplot as plt
 import pickle
 
+
+def show_graph( name, data):
+
+    plt.imshow(data, origin='lower')
+    plt.xlabel("Frame")
+    plt.ylabel("Frequency (Hz)")
+    cbar = plt.colorbar()
+    cbar.set_label("Volume (dB)")
+    plt.title(f"{name} Feature Set")
+    
+    plt.show()
+    plt.savefig(name + ".png")
 
 class UrbanSound8KDataset(data.Dataset):
     def __init__(self, dataset_path, mode):
@@ -22,6 +35,10 @@ class UrbanSound8KDataset(data.Dataset):
                 if feature in ["logmelspec", "chroma", 'spectral_contrast', "tonnetz"]:
                     LMC = np.vstack((LMC, self.dataset[index]['features'][feature]))
             feature = torch.from_numpy(LMC.astype(np.float32)).unsqueeze(0)
+
+            if index == 12:
+                show_graph("LMC", LMC)
+
         
         elif self.mode == 'MC':
             # Edit here to load and concatenate the neccessary features to 
@@ -31,6 +48,9 @@ class UrbanSound8KDataset(data.Dataset):
                 # print(feature)
                 if feature in  ["mfcc", "chroma", 'spectral_contrast',  "tonnetz"]:
                     MC = np.vstack((MC, self.dataset[index]['features'][feature]))
+                
+            if index == 12:
+                show_graph("MC",MC)
 
          
             feature = torch.from_numpy(MC.astype(np.float32)).unsqueeze(0)
@@ -53,5 +73,16 @@ class UrbanSound8KDataset(data.Dataset):
 
         return feature, label, fname
 
+
     def __len__(self):
         return len(self.dataset)
+
+def main():
+    
+    x = UrbanSound8KDataset('UrbanSound8K_test.pkl', "LMC").__getitem__(12)
+    y = UrbanSound8KDataset('UrbanSound8K_test.pkl', "MC").__getitem__(12)
+    
+
+if __name__ == '__main__':
+    main()
+    
