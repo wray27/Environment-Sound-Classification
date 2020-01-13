@@ -29,19 +29,23 @@ class CNN(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
         self.normaliseConv1 = nn.BatchNorm2d(
             num_features=32,
+            momentum=0.9,
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=32        # if hasattr(layer, "bias"):
+            num_features=32,
+            momentum=0.9,        # if hasattr(layer, "bias"):
         #     nn.init.zeros_(layer.bias)
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
             num_features=64,
+            momentum=0.9,
         )
 
         self.normaliseConv4 = nn.BatchNorm2d(
             num_features=64,
+            momentum=0.9,
         )
 
 
@@ -139,8 +143,6 @@ class CNN(nn.Module):
         x = self.fc2(x)
 
         #x = self.smax(x)
-        #stride
-        #summary
 
 
 
@@ -361,7 +363,7 @@ def run(mode):
         isMLMC = True
 
 
-    model = CNN(height=85, width=41, channels=1, class_count=10, dropout=0.5, isMLMC=isMLMC)
+    model = CNN(height=41, width=85, channels=1, class_count=10, dropout=0.5, isMLMC=isMLMC)
 
     criterion = nn.CrossEntropyLoss()
 
