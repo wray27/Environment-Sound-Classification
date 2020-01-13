@@ -32,8 +32,11 @@ class UrbanSound8KDataset(data.Dataset):
             LMC = np.zeros((0,41))
             for feature in self.dataset[index]['features']:
                 # print(feature)
-                if feature in ["logmelspec", "chroma", 'spectral_contrast', "tonnetz"]:
-                    LMC = np.vstack((LMC, self.dataset[index]['features'][feature]))
+                LMC = np.vstack((LMC, self.dataset[index]['features']["logmelspec"]))
+                LMC = np.vstack((LMC, self.dataset[index]['features']["chroma"]))
+                LMC = np.vstack((LMC, self.dataset[index]['features']["spectral_contrast"))
+                LMC = np.vstack((LMC, self.dataset[index]['features']["tonnetz"]))
+
             feature = torch.from_numpy(LMC.astype(np.float32)).unsqueeze(0)
 
             if index == 12:
@@ -60,8 +63,13 @@ class UrbanSound8KDataset(data.Dataset):
             MLMC = np.zeros((0,41))
             for feature in self.dataset[index]['features']:
                 # print(feature)
-                if feature in ["mfcc", "logmelspec", "chroma", 'spectral_contrast', "tonnetz"]:
-                    MLMC = np.vstack((MLMC, self.dataset[index]['features'][feature]))
+                # if feature in ["mfcc", "logmelspec", "chroma", 'spectral_contrast', "tonnetz"]:
+                MLMC = np.vstack((MLMC, self.dataset[index]['features']["mfcc"]))
+                MLMC = np.vstack((MLMC, self.dataset[index]['features']["logmelspec"]))
+                MLMC = np.vstack((MLMC, self.dataset[index]['features']["chroma"]))
+                MLMC = np.vstack((MLMC, self.dataset[index]['features']['spectral_contrast']))
+                MLMC = np.vstack((MLMC, self.dataset[index]['features']["tonnetz"]))
+                
 
             
             feature = torch.from_numpy(MLMC.astype(np.float32)).unsqueeze(0)

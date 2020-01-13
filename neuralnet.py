@@ -96,8 +96,8 @@ class CNN(nn.Module):
         self.initialise_layer(self.conv4)
         fcsize = 15488
 
-        # if(isMLMC):
-        #     fcsize = 23040
+        if(isMLMC):
+            fcsize = 23040
 
         self.fc1 = nn.Linear(fcsize, 1024)
         self.initialise_layer(self.fc1)
