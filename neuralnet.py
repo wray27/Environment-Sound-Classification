@@ -101,7 +101,7 @@ class CNN(nn.Module):
         fcsize = 15488
 
         if(isMLMC):
-           fcsize = 23040
+           fcsize = 26048
 
         self.fc1 = nn.Linear(fcsize, 1024)
         self.initialise_layer(self.fc1)
