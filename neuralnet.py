@@ -26,22 +26,26 @@ class CNN(nn.Module):
         super().__init__()
         self.input_shape = ImageShape(height=height, width=width, channels=channels)
         self.class_count = class_count
-        self.dropout = nn.Dropout(p=dropout)
+        self.dropout = nn.Dropout2d(p=dropout)
         self.normaliseConv1 = nn.BatchNorm2d(
             num_features=32,
+            
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
-            num_features=32        # if hasattr(layer, "bias"):
+            num_features=32,
+                    # if hasattr(layer, "bias"):
         #     nn.init.zeros_(layer.bias)
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
             num_features=64,
+             
         )
 
         self.normaliseConv4 = nn.BatchNorm2d(
             num_features=64,
+             
         )
 
 
@@ -361,7 +365,7 @@ def run(mode):
         isMLMC = True
 
 
-    model = CNN(height=85, width=41, channels=1, class_count=10, dropout=0.5, isMLMC=isMLMC)
+    model = CNN(height=41, width=85, channels=1, class_count=10, dropout=0.5, isMLMC=isMLMC)
 
     criterion = nn.CrossEntropyLoss()
 

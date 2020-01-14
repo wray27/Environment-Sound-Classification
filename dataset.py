@@ -63,14 +63,14 @@ class UrbanSound8KDataset(data.Dataset):
             # Edit here to load and concatenate the neccessary features to
             # create the MLMC feature
             MLMC = np.zeros((0,41))
-            for feature in self.dataset[index]['features']:
+            # for feature in self.dataset[index]['features']:
                 # print(feature)
                 # if feature in ["mfcc", "logmelspec", "chroma", 'spectral_contrast', "tonnetz"]:
-                MLMC = np.vstack((MLMC, self.dataset[index]['features']["mfcc"]))
-                MLMC = np.vstack((MLMC, self.dataset[index]['features']["logmelspec"]))
-                MLMC = np.vstack((MLMC, self.dataset[index]['features']["chroma"]))
-                MLMC = np.vstack((MLMC, self.dataset[index]['features']['spectral_contrast']))
-                MLMC = np.vstack((MLMC, self.dataset[index]['features']["tonnetz"]))
+            MLMC = np.vstack((MLMC, self.dataset[index]['features']["mfcc"]))
+            MLMC = np.vstack((MLMC, self.dataset[index]['features']["logmelspec"]))
+            MLMC = np.vstack((MLMC, self.dataset[index]['features']["chroma"]))
+            MLMC = np.vstack((MLMC, self.dataset[index]['features']['spectral_contrast']))
+            MLMC = np.vstack((MLMC, self.dataset[index]['features']["tonnetz"]))
 
 
 
