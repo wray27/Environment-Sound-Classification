@@ -15,6 +15,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import copy
 import sys
+import argparse
+from pathlib import Path
 
 class ImageShape(NamedTuple):
     height: int
@@ -164,6 +166,7 @@ class Trainer:
         val_loader: DataLoader,
         criterion: nn.Module,
         optimizer: Optimizer,
+        summary_writer: SummaryWriter,
         device: torch.device,
     ):
         self.model = model.to(device)
@@ -173,6 +176,7 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.intermediate_results = None
+        self.summary_writer = summary_writer
 
         self.step = 0
     # TODO
@@ -181,6 +185,7 @@ class Trainer:
         epochs: int,
         val_frequency: int,
         print_frequency: int = 20,
+        log_frequency: int = 1,
         start_epoch: int = 0
     ):
         self.model.train()
@@ -211,6 +216,9 @@ class Trainer:
                 data_load_time = data_load_end_time - data_load_start_time
                 step_time = time.time() - data_load_end_time
 
+                if ((self.step + 1) % log_frequency) == 0:
+                    self.log_metrics(epoch, accuracy, loss, data_load_time, step_time)
+
                 if ((self.step + 1) % print_frequency) == 0:
                     self.print_metrics(epoch, accuracy, loss, data_load_time, step_time)
 
@@ -239,6 +247,24 @@ class Trainer:
         )
 
 
+    def log_metrics(self, epoch, accuracy, loss, data_load_time, step_time):
+        self.summary_writer.add_scalar("epoch", epoch, self.step)
+        self.summary_writer.add_scalars(
+                "accuracy",
+                {"train": accuracy},
+                self.step
+        )
+        self.summary_writer.add_scalars(
+                "loss",
+                {"train": float(loss.item())},
+                self.step
+        )
+        self.summary_writer.add_scalar(
+                "time/data", data_load_time, self.step
+        )
+        self.summary_writer.add_scalar(
+                "time/data", step_time, self.step
+        )
 
     def validate(self):
         print("\n\nvalidating\n\n")
@@ -265,6 +291,23 @@ class Trainer:
             results = file_level_pred(results)
 
             print_accuracy(results, total_loss, self.val_loader)
+
+        accuracy = compute_accuracy(
+            np.array(results["labels"]), np.array(results["preds"])
+        )
+        average_loss = total_loss / len(self.val_loader)
+
+
+        self.summary_writer.add_scalars(
+                "accuracy",
+                {"test": accuracy},
+                self.step
+        )
+        self.summary_writer.add_scalars(
+                "loss",
+                {"test": average_loss},
+                self.step
+        )
 
         return intermediate_results
 
@@ -365,22 +408,25 @@ def run(mode):
     criterion = nn.CrossEntropyLoss()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-6)
-
-
+    log_dir = get_summary_writer_log_dir()
+    summary_writer = SummaryWriter(
+            str(log_dir),
+            flush_secs=5
+    )
     trainer = Trainer(
-        model, train_loader, val_loader, criterion, optimizer, DEVICE
+        model, train_loader, val_loader, criterion, optimizer, summary_writer, DEVICE
     )
 
     int_results = trainer.train(
-        epochs=1,
+        epochs=50,
         print_frequency=50,
-        val_frequency=1,
+        val_frequency=5,
     )
 
     return int_results
 
 
-def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
+def get_summary_writer_log_dir() -> str:
     """Get a unique directory that hasn't been logged to before for use with a TB
     SummaryWriter.
 
@@ -392,10 +438,10 @@ def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
         from getting logged to the same TB log directory (which you can't easily
         untangle in TB).
     """
-    tb_log_dir_prefix = f'CNN_bs={args.batch_size}_lr={args.learning_rate}_run_'
+    tb_log_dir_prefix = f'CNN_bs=32_lr=0.001_run_'
     i = 0
     while i < 1000:
-        tb_log_dir = args.log_dir / (tb_log_dir_prefix + str(i))
+        tb_log_dir = Path("logs") / (tb_log_dir_prefix + str(i))
         if not tb_log_dir.exists():
             return str(tb_log_dir)
         i += 1
