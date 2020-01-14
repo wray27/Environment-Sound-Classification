@@ -26,26 +26,23 @@ class CNN(nn.Module):
         super().__init__()
         self.input_shape = ImageShape(height=height, width=width, channels=channels)
         self.class_count = class_count
-        self.dropout = nn.Dropout(p=dropout)
+        self.dropout = nn.Dropout2d(p=dropout)
         self.normaliseConv1 = nn.BatchNorm2d(
             num_features=32,
-            momentum=0.9,
         )
 
         self.normaliseConv2 = nn.BatchNorm2d(
             num_features=32,
-            momentum=0.9,        # if hasattr(layer, "bias"):
+        # if hasattr(layer, "bias"):
         #     nn.init.zeros_(layer.bias)
         )
 
         self.normaliseConv3 = nn.BatchNorm2d(
             num_features=64,
-            momentum=0.9,
         )
 
         self.normaliseConv4 = nn.BatchNorm2d(
             num_features=64,
-            momentum=0.9,
         )
 
 
@@ -375,12 +372,37 @@ def run(mode):
     )
 
     int_results = trainer.train(
-        epochs=50,
+        epochs=1,
         print_frequency=50,
-        val_frequency=5,
+        val_frequency=1,
     )
 
     return int_results
+
+
+def get_summary_writer_log_dir(args: argparse.Namespace) -> str:
+    """Get a unique directory that hasn't been logged to before for use with a TB
+    SummaryWriter.
+
+    Args:
+        args: CLI Arguments
+
+    Returns:
+        Subdirectory of log_dir with unique subdirectory name to prevent multiple runs
+        from getting logged to the same TB log directory (which you can't easily
+        untangle in TB).
+    """
+    tb_log_dir_prefix = f'CNN_bs={args.batch_size}_lr={args.learning_rate}_run_'
+    i = 0
+    while i < 1000:
+        tb_log_dir = args.log_dir / (tb_log_dir_prefix + str(i))
+        if not tb_log_dir.exists():
+            return str(tb_log_dir)
+        i += 1
+    return str(tb_log_dir)
+
+
+
 
 
 if __name__ == "__main__":
@@ -395,7 +417,23 @@ if __name__ == "__main__":
             int_results1["preds"] = combinedPreds
             results = file_level_pred(int_results1)
             print_accuracy(results, None, None)
+            amountRight = np.equal(results["labels"], results["preds"])
+            fileNameRight = mode + "right"
+            fileNameLabels = mode + "labels"
+            fileNamePreds = mode + "preds"
+            np.savetxt(fileNameRight, amountRight)
+            np.savetxt(fileNameLabels, results["labels"])
+            np.savetxt(fileNamePreds, results["preds"])
         elif(mode == 'LMC' or mode == 'MC' or mode == 'MLMC'):
-            run(mode)
+            results = run(mode)
+            results = file_level_pred(results)
+            amountRight = np.equal(results["labels"], results["preds"])
+            fileNameRight = mode + "right"
+            fileNameLabels = mode + "labels"
+            fileNamePreds = mode + "preds"
+            np.savetxt(fileNameRight, amountRight)
+            np.savetxt(fileNameLabels, results["labels"])
+            np.savetxt(fileNamePreds, results["preds"])
+
         else:
             print("Wrong arguments given")
