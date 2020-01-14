@@ -18,7 +18,7 @@ The network classifies 10 different recorded sounds:
 
 ## Running the Code
 
-To run the code, the model used to train the classifier needs to be specified these are:
+To run the code, the model used to train the classifier is the argument and *must* be set.
 * LMC
 * MC
 * MLMC
