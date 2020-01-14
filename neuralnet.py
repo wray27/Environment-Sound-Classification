@@ -464,9 +464,9 @@ if __name__ == "__main__":
             results = file_level_pred(int_results1)
             print_accuracy(results, None, None)
             amountRight = np.equal(results["labels"], results["preds"])
-            fileNameRight = mode + "right"
-            fileNameLabels = mode + "labels"
-            fileNamePreds = mode + "preds"
+            fileNameRight = mode + "right" + "modified"
+            fileNameLabels = mode + "labels" + "modified"
+            fileNamePreds = mode + "preds" + "modified"
             np.savetxt(fileNameRight, amountRight)
             np.savetxt(fileNameLabels, results["labels"])
             np.savetxt(fileNamePreds, results["preds"])
@@ -474,9 +474,9 @@ if __name__ == "__main__":
             results = run(mode)
             results = file_level_pred(results)
             amountRight = np.equal(results["labels"], results["preds"])
-            fileNameRight = mode + "right"
-            fileNameLabels = mode + "labels"
-            fileNamePreds = mode + "preds"
+            fileNameRight = mode + "right" + "modified"
+            fileNameLabels = mode + "labels" + "modified"
+            fileNamePreds = mode + "preds" + "modified"
             np.savetxt(fileNameRight, amountRight)
             np.savetxt(fileNameLabels, results["labels"])
             np.savetxt(fileNamePreds, results["preds"])
