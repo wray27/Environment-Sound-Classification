@@ -29,3 +29,6 @@ An example of training and validating the CNN with the LMC model is given below:
 ```
 $ python neuralnet.py LMC
 ```
+## References
+<a id="1">[1]</a> 
+Y. Su, K. Zhang, J. Wang, and K. Madani, “Environment soundclassification  using  a  two-stream  cnn  based  on  decision-levelfusion,”Sensors, vol. 19, p. 1733, 04 2019.
