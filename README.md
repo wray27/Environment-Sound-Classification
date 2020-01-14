@@ -26,4 +26,6 @@ To run the code, the model used to train the classifier needs to be specified th
 
 An example of training and validating the CNN with the LMC model is given below:
 
-`$ python neuralnet.py LMC`
+```
+$ python neuralnet.py LMC
+```
