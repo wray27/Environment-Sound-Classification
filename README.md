@@ -2,7 +2,7 @@
 
 ## Background
 
-This project was created in order to reproduce the results obtained from the sensors_paper.pdf (cite properly), the paper itself conatains a few inconsistencies but was used to successfully recreate the convolutional neural network. 
+This project was created in order to reproduce the results obtained from the sensors_paper.pdf (cite properly), the paper itself contains a few inconsistencies but was used to successfully recreate the convolutional neural network. 
 
 The network classifies 10 different recorded sounds:
 * air_conditioner
